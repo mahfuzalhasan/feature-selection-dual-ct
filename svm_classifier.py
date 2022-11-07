@@ -23,25 +23,36 @@ def important_feature_selection(train_features, val_features, initial_feature_na
     pca.fit(train_features)
     X_pc = pca.transform(train_features)
     X_val = pca.transform(val_features)
+    # 90 patients --> 90x4019
+
+    # 90 patients --> 90x3x4019 
+    # to run PCA --> 90 x 12057 ---> [0 5000]
+
     print("after pca feature shape: ",X_pc.shape, X_val.shape)
 
     # number of components
-    #print("pca_components: ",pca.components_.shape)
-    n_pcs= pca.components_.shape[0]
-    #print("number of components: ", n_pcs)
+    print("pca_components: ",pca.components_.shape)
+    
+    n_pcs = pca.components_.shape[0]
+
+
+    print("number of components: ", n_pcs)
 
 
     # get the index of the most important feature on EACH component
-    # LIST COMPREHENSION HERE
-    #most_important = [np.abs(pca.components_[i]).argmax() for i in range(n_pcs)]
 
+    # LIST COMPREHENSION HERE
+    most_important = [np.abs(pca.components_[i]).argmax() for i in range(n_pcs)]
+
+    # list to capture all feature names
     #initial_feature_names = ['a','b','c','d','e']
-    # get the names
-    #most_important_names = [initial_feature_names[most_important[i]] for i in range(n_pcs)]
+    
+    # get the names selected by PCA
+    most_important_names = [initial_feature_names[most_important[i]] for i in range(n_pcs)]
 
     # LIST COMPREHENSION HERE AGAIN
-    #dic = {'PC{}'.format(i): most_important_names[i] for i in range(n_pcs)}
-    #print(dic)
+    dic = {'PC{}'.format(i): most_important_names[i] for i in range(n_pcs)}
+    print(dic)
     return X_pc, X_val
 
 def random_shuffle(data, label):
@@ -65,7 +76,8 @@ if __name__=='__main__':
 
     img_kev_list = [i for i in range(40, 141, 5)]
     mapper = {img_kev_list[i]:i for i in range(21)}
-    input_keV = [65, 85, 120]
+    #input_keV = [65, 85, 120]
+    input_keV = [65]
     #for keV in img_kev_list:
     print("image in keV: ",input_keV)
     indices = np.asarray([mapper[i] for i in input_keV])
@@ -79,13 +91,13 @@ if __name__=='__main__':
     X_val = read_file("val_data", folder)
     Y_val = read_file("val_label", folder)
 
-    #print(X_train.shape, X_val.shape)
+    print(X_train.shape, X_val.shape)
 
     X_train = X_train[:, indices, :]
     X_val = X_val[:, indices, :]
     
 
-    #print(X_train.shape, X_val.shape)
+    print("X-train and X-val after selection: ",X_train.shape, X_val.shape)
     #exit()
 
     X_train, Y_train = random_shuffle(X_train, Y_train)
@@ -113,9 +125,9 @@ if __name__=='__main__':
     # dimensionality_reduction
     #X_train, X_val = dimensionality_reduction(X_train, X_val)
     X_train, X_val = important_feature_selection(X_train, X_val, initial_feature_names)
-    #print("dim reduced data: ", X_train.shape, X_val.shape)
+    print("dim reduced data: ", X_train.shape, X_val.shape)
     #dump_file("selected_feature", folder, dic)
-    #exit()
+    exit()
     ##########################
 
     # MLPClassifier

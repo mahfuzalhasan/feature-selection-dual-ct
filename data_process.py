@@ -40,6 +40,7 @@ class DataProcess(object):
         #print("image type: ", image_name)
         for patient_file in  os.listdir(self.data_folder):
             patient_id = patient_file[:patient_file.rindex('.')]
+            print("patient id: ",patient_id)
             df = pd.read_csv(os.path.join(self.data_folder, patient_file))
             #print(df.shape)
             #exit()
@@ -49,6 +50,8 @@ class DataProcess(object):
             feature = patient_data[:, 37:]
             label = self.getLabel(label_file, patient_id)
             labels.append(label)
+            #print(feature.shape)
+            #exit()
             feature_set.append(feature)
 
         feature_set = np.asarray(feature_set)
@@ -76,7 +79,7 @@ class DataProcess(object):
         val_set = []
         val_label = []
 
-        split_index_class = [4,4,4,3]
+        split_index_class = [4, 4, 4, 3]
         for i in range(4):  #4 classes
             data_class = feature_set[labels == i, :, :]
             label_class = labels[labels == i]
@@ -100,8 +103,9 @@ class DataProcess(object):
 
 
     def getLabel(self, label_file, patient_id):
-        #print('patient id:',patient_id)
+        #print('patient id:', patient_id)
         label_info = label_file.loc[label_file['Case ID'] == patient_id]
+        #print("label info: ",label_info)
         label = -1
 
         OC = float(label_info.iloc[0]['OC'])
