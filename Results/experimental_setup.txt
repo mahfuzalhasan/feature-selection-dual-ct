@@ -1,0 +1,20 @@
+## Regular Energy level
+65 --> important feature calculation --> 29
+85 --> 24
+## Adding energy level
+(65, 85, 120) --> new information?... It provides new set of feature.
+
+
+## Experimenting
+with 65....--> PCA()--> only its feature --> benign/malignant ---> result1
+
+with concat(65, 85) ---> PCA --> 40 dim feat -->   benign/malignant ---> result2
+
+65 keV --> 29 + 11 (new) --->   benign/malignant  --->  result3 is close to result1
+
+
+## Feature change
+# Flat
+
+##classification
+P16 Pos / Neg

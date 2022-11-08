@@ -25,6 +25,15 @@ def read_file(file_name, img_type):
     f.close()
     return data
 
+def write_imp_feature_name(write_path, feat_dict):
+    f = open(os.path.join(write_path), 'w')
+    for key,value in feat_dict.items():
+        f.write(''+ value + '\n')
+    f.close()
+        
+
+
+
 def dimensionality_reduction(train_set, val_set):
     # Make an instance of the Model
     pca = PCA(n_components=0.95, random_state=2022)
