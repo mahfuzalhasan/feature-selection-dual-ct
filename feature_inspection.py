@@ -88,7 +88,7 @@ def select_keV_data(data, input_keV, mapper):
 if __name__=='__main__':
 
     img_kev_list = [i for i in range(40, 141, 5)]
-    """ feat_appearances = {}
+    feat_appearances = {}
 
     for energy_level in img_kev_list:
         f = open(os.path.join(cfg.output_dir, str(energy_level)+'.txt'), "r")
@@ -101,7 +101,7 @@ if __name__=='__main__':
             else:
                 feat_appearances[feat] += 1
                 
-    output = [(key, val) for key, val in feat_appearances.items() if val>10] """
+    output = [(key, val) for key, val in feat_appearances.items() if val>10]
     feature_stats()
     print()
 

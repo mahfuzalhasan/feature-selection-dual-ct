@@ -14,8 +14,6 @@ from sklearn.linear_model import LogisticRegression
 
 import os
 
-    
-
 
 def important_feature_selection(train_features, val_features, initial_feature_names):
     # 10 samples with 5 features

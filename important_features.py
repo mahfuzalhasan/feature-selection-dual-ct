@@ -50,7 +50,7 @@ def draw_important_features(f_draw):
 if __name__=="__main__":
     features = []
     common_all = []
-    check = [65,70, 120]
+    check = [65, 70, 120]
     for i in check:
         folder = str(i)
         s_feat = read_file("selected_feature", folder)
