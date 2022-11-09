@@ -1,10 +1,10 @@
 ### feature-selection-dual-ct
 ## feature-saving
-> Run python3 data_process.py <br/>
-> Inside Class DataProcess from *data_process.py*, function **_read_data_file()** read features from each patient file from data folder (./data/Features) and stored in a numpy array of dimension 21x4019 (**_num-energy-level x feature-dimension_**). For each energy level we get *95x21x4019* dimensional data (95 is the patient number) <br/>
-> labels are also stored in **getLabel()** function. To read label for a particular end goal, masterfile is used. <br/>
-> data is split in **train_val_split()** function <br/>
-> set **dump=True** in *parameters.py* to save splitted set <br/>
+- Run python3 data_process.py <br/>
+- Inside Class DataProcess from *data_process.py*, function **_read_data_file()** read features from each patient file from data folder (./data/Features) and stored in a numpy array of dimension 21x4019 (**_num-energy-level x feature-dimension_**). For each energy level we get *95x21x4019* dimensional data (95 is the patient number) <br/>
+- labels are also stored in **getLabel()** function. To read label for a particular end goal, masterfile is used. <br/>
+- data is split in **train_val_split()** function <br/>
+- set **dump=True** in *parameters.py* to save splitted set <br/>
 
 ## feature reduction and important feature selection
 > Run python3 svm_classifier.py to apply PCA for each energy level data. Applying PCA on features from 65keV
