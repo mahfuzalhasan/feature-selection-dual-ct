@@ -33,7 +33,7 @@ def important_feature_selection(train_features, val_features, initial_feature_na
     #print("after pca feature shape: ",X_pc.shape, X_val.shape)
 
     # number of components
-    print("pca_components: ",pca.components_.shape)
+    print("pca_components: ", pca.components_.shape)
     
     n_pcs = pca.components_.shape[0]
     #print("explained variance: ", pca.explained_variance_, pca.explained_variance_ratio_)
@@ -45,9 +45,9 @@ def important_feature_selection(train_features, val_features, initial_feature_na
     print("first most imp comp: ",most_important[0])
     first_comp = pca.components_[:, most_important[0]]
 
-    print("pca components: ", first_comp)
+    #print("pca components: ", first_comp)
 
-    print("X_pc values: ", X_pc[:, 0])
+    #print("X_pc values: ", X_pc[:, 0])
     
     
     
@@ -60,12 +60,12 @@ def important_feature_selection(train_features, val_features, initial_feature_na
     
     # 80x4019 --> PCA --> min(num_sample, num_feature) --> 80
     # get the names selected by PCA
-    most_important_names = [initial_feature_names[most_important[i]] for i in range(n_pcs)]
+    most_important_names = [initial_feature_names[most_important[i]%4019] for i in range(n_pcs)]
 
     # LIST COMPREHENSION HERE AGAIN
     dic = {'PC{}'.format(i): most_important_names[i] for i in range(n_pcs)}
     print(dic)
-    exit()
+    #exit()
     return X_pc, X_val, dic
 
 def random_shuffle(data, label):
@@ -89,8 +89,7 @@ if __name__=='__main__':
 
     img_kev_list = [i for i in range(40, 141, 5)]
     mapper = {img_kev_list[i]:i for i in range(21)}
-    #input_keV = [65, 85, 120]
-    #input_keV = [65]
+    
     for keV in img_kev_list:
         input_keV = [keV]
         print("image in keV: ", input_keV)
@@ -105,7 +104,7 @@ if __name__=='__main__':
         X_val = read_file("val_data", folder)
         Y_val = read_file("val_label", folder)
 
-        print(X_train.shape, X_val.shape)
+        print("saved data: ",X_train.shape, X_val.shape)
 
         X_train = X_train[:, indices, :]
         X_val = X_val[:, indices, :]
@@ -118,9 +117,12 @@ if __name__=='__main__':
         X_val, Y_val = random_shuffle(X_val, Y_val)
         initial_feature_names = read_file("features", folder)
 
+        #print("previous: ",X_train[0:10, 1, 3050])
         X_train = X_train.reshape(X_train.shape[0], -1)
         X_val = X_val.reshape(X_val.shape[0], -1)
-        print(X_train.shape, X_val.shape)
+        #print("after reshaped: ",X_train[0:10, 7069])
+        #print(X_train.shape, X_val.shape)
+        #exit()
         # Normalization
         scaler = MinMaxScaler().fit(X_train)
         X_train = scaler.transform(X_train)
@@ -141,25 +143,32 @@ if __name__=='__main__':
         X_train, X_val, imp_feat_dict = important_feature_selection(X_train, X_val, initial_feature_names)
         print("dim reduced data: ", X_train.shape, X_val.shape)
 
-        write_path = os.path.join(cfg.output_dir, str(keV)+'.txt')
+        name = ''
+        for j, keV in enumerate(input_keV):
+            name += str(keV)
+            if j != len(input_keV)-1:
+                name += "_"
+            
+            
+        write_path = os.path.join(cfg.output_dir, name+'.txt')
 
         write_imp_feature_name(write_path, imp_feat_dict)
 
-        
-        
-        #dump_file("selected_feature", folder, dic)
-        ##########################
+    
+    
+    #dump_file("selected_feature", folder, dic)
+    ##########################
 
-        # MLPClassifier
-        #print("##### MLP classifier ######")
-        #clf = MLPClassifier(hidden_layer_sizes=(40, 20, 10), batch_size=8, max_iter=10000, learning_rate_init=0.0001, random_state=1)
-        """ clf = MLPClassifier(hidden_layer_sizes=(100, 60, 30, 10), batch_size=8, max_iter=100000000, learning_rate_init=0.0001, random_state=1)
-        clf.fit(X_train, Y_train)
-        Y_predict = clf.predict(X_val)
-        print('Y_val: ', Y_val)
-        print('Y_pre: ', Y_predict) """
-        print("################################")
-        ###############
+    # MLPClassifier
+    #print("##### MLP classifier ######")
+    #clf = MLPClassifier(hidden_layer_sizes=(40, 20, 10), batch_size=8, max_iter=10000, learning_rate_init=0.0001, random_state=1)
+    """ clf = MLPClassifier(hidden_layer_sizes=(100, 60, 30, 10), batch_size=8, max_iter=100000000, learning_rate_init=0.0001, random_state=1)
+    clf.fit(X_train, Y_train)
+    Y_predict = clf.predict(X_val)
+    print('Y_val: ', Y_val)
+    print('Y_pre: ', Y_predict) """
+    print("################################")
+    ###############
 
 
 

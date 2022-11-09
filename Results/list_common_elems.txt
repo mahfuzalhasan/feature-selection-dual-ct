@@ -1,0 +1,9 @@
+[('lbp-2D_firstorder_Median', 15), ('lbp-2D_firstorder_90Percentile', 18), 
+('exponential_glszm_SizeZoneNonUniformityNormalized', 17), 
+('square_glszm_SizeZoneNonUniformityNormalized', 13), 
+('square_ngtdm_Coarseness', 19), 
+('log-sigma-2-0-mm-3D_gldm_LargeDependenceEmphasis', 12), 
+('wavelet-HHL_glrlm_LowGrayLevelRunEmphasis', 12), 
+('logarithm_firstorder_90Percentile', 16), 
+('wavelet3-HHH_glrlm_LowGrayLevelRunEmphasis', 15), 
+('wavelet-HHL_ngtdm_Contrast', 15)]
