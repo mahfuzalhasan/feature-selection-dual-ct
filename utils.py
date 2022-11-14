@@ -17,6 +17,12 @@ def normalize(X):
     normalized_input = (X - np.amin(X)) / (np.amax(X) - np.amin(X))
     return 2*normalized_input - 1
 
+def random_shuffle(data, label):
+    indices = np.random.permutation(data.shape[0])
+    data = data[indices, :, :]
+    label = label[indices]
+    return data, label
+
 def dump_file(file_name, image_type, data_file):
     path = os.path.join(params.saved_file_loc, image_type)
     if not os.path.exists(path):
@@ -38,33 +44,51 @@ def write_imp_feature_name(write_path, feat_dict):
         f.write(''+ value + '\n')
     f.close()
 
-def feature_stats():
+
+def plot_matplotlib(x_coords, y_coords, title, x_label, y_label, feature_name, save_path):
+    plt.figure()
+    plt.scatter(x_coords, y_coords)
+    plt.title(title)
+    plt.xlabel(x_label)
+    plt.ylabel(y_label) 
+    plt.savefig(os.path.join(save_path, feature_name+'.png'))
+    plt.close()
+
+def feature_stats(features):
     #for feature in features:
     save_path = os.path.join(cfg.output_dir, "feature_stats")
     if not os.path.exists(save_path):
         os.makedirs(save_path)
-    energy_feature_dict = {i:[] for i in range(40, 141, 5)}
-    mapper = {i:list(energy_feature_dict.keys())[i] for i in range(21)}
-    print("mapper: ",mapper)
-    print("energy_f_dict: ",energy_feature_dict)
-    xs = []
-    ys = []
-    for patient_file in  os.listdir(cfg.data_folder):
-        patient_id = patient_file[:patient_file.rindex('.')]
-        print("patient id: ",patient_id)
-        df = pd.read_csv(os.path.join(cfg.data_folder, patient_file))
-        feature_vals = df.loc[:, "logarithm_firstorder_90Percentile"]
-        for i, vals in enumerate(feature_vals):
-            #xs.append(mapper[i])
-            #ys.append(vals)
-            energy_feature_dict[mapper[i]].append(vals)
+    
+    #exit()
+    
+    for _, (feature_name, val) in enumerate(features):
+        print("feature: ",feature_name)
+        energy_feature_dict = {i:[] for i in range(40, 141, 5)}
+        mapper = {i:list(energy_feature_dict.keys())[i] for i in range(21)}
+        #print("mapper: ",mapper)
+        #print("energy_f_dict: ",energy_feature_dict)
+        xs = []
+        ys = []
+        for patient_file in  os.listdir(cfg.data_folder):
+            patient_id = patient_file[:patient_file.rindex('.')]
+            #print("patient id: ",patient_id)
+            df = pd.read_csv(os.path.join(cfg.data_folder, patient_file))
+            feature_vals = df.loc[:, feature_name]
+            for j, vals in enumerate(feature_vals):
+                xs.append(mapper[j])
+                ys.append(vals)
+                energy_feature_dict[mapper[j]].append(vals)
+        xs_unique = []
+        ys_avg = []
+        for energy_level, vals in energy_feature_dict.items():
+            xs_unique.append(energy_level)
+            ys_avg.append(mean(vals))
 
-    for energy_level, vals in energy_feature_dict.items():
-        xs.append(energy_level)
-        ys.append(mean(vals))
 
-    plt.scatter(xs, ys)
-    plt.savefig(os.path.join(save_path, "logarithm_firstorder_90Percentile_avg.png"))
+        plot_matplotlib(xs, ys, feature_name, "energy level", "feature for each patient", feature_name, save_path)
+        plot_matplotlib(xs_unique, ys_avg, "average "+feature_name, "energy level", "avg feature values", feature_name+'_avg', save_path)
+        
     #lists = sorted(energy_feature_dict.items()) # sorted by key, return a list of tuples
     #x, y = zip(*lists) # unpack a list of pairs into two tuples
     #print(x, y)

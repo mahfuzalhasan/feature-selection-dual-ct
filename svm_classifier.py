@@ -8,6 +8,7 @@ from sklearn.model_selection import RepeatedStratifiedKFold, cross_val_score
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.neural_network import MLPClassifier
 from sklearn.decomposition import PCA
+from sklearn.metrics import accuracy_score
 
 from sklearn.utils.class_weight import compute_class_weight 
 from sklearn.linear_model import LogisticRegression
@@ -62,15 +63,10 @@ def important_feature_selection(train_features, val_features, initial_feature_na
 
     # LIST COMPREHENSION HERE AGAIN
     dic = {'PC{}'.format(i): most_important_names[i] for i in range(n_pcs)}
-    print(dic)
+    #print(dic)
     #exit()
     return X_pc, X_val, dic
 
-def random_shuffle(data, label):
-    indices = np.random.permutation(data.shape[0])
-    data = data[indices, :, :]
-    label = label[indices]
-    return data, label
 
 def select_keV_data(data, input_keV, mapper):
     selected_data = []
@@ -82,33 +78,39 @@ def select_keV_data(data, input_keV, mapper):
 
 
 
-
 if __name__=='__main__':
 
     img_kev_list = [i for i in range(40, 141, 5)]
     mapper = {img_kev_list[i]:i for i in range(21)}
     
-    for keV in img_kev_list:
-        input_keV = [keV]
-        print("image in keV: ", input_keV)
-        indices = np.asarray([mapper[i] for i in input_keV])
-        #indices = np.asarray([mapper[keV]])
-        #indices = np.asarray(indices)
+    #for keV in img_kev_list:
+    input_keV = [65, 90, 120]
+    print("image in keV: ", input_keV)
+    indices = np.asarray([mapper[i] for i in input_keV])
+    #indices = np.asarray([mapper[keV]])
+    #indices = np.asarray(indices)
 
-        folder = "global"
-        
-        X_train = read_file("train_data", folder)
-        Y_train = read_file("train_label", folder)
-        X_val = read_file("val_data", folder)
-        Y_val = read_file("val_label", folder)
+    folder = "histology"
+    train_folds = read_file("train_folds", folder)
+    train_label_folds = read_file("train_label_folds", folder)
+    val_folds = read_file("val_folds", folder)
+    val_label_folds = read_file("val_label_folds", folder)
+    accuracy_folds = []
 
-        print("saved data: ",X_train.shape, X_val.shape)
+    for fold in range(5):
+        print("Fold # ", fold)
+        X_train = np.asarray(train_folds[fold])
+        Y_train = np.asarray(train_label_folds[fold])
+        X_val = np.asarray(val_folds[fold])
+        Y_val = np.asarray(val_label_folds[fold])
+        print("pre-loaded data: ", X_train.shape, X_val.shape)
+        print("pre-loaded label: ", Y_train.shape, Y_val.shape)
 
         X_train = X_train[:, indices, :]
         X_val = X_val[:, indices, :]
         
 
-        print("X-train and X-val after selection: ",X_train.shape, X_val.shape)
+        print("X-train and X-val specific keV selection: ", X_train.shape, X_val.shape)
         #exit()
 
         X_train, Y_train = random_shuffle(X_train, Y_train)
@@ -147,69 +149,71 @@ if __name__=='__main__':
             if j != len(input_keV)-1:
                 name += "_"
             
-            
-        write_path = os.path.join(cfg.output_dir, name+'.txt')
+        write_dir = os.path.join(cfg.output_dir, "reduced_feature")
+        if not os.path.exists(write_dir):
+            os.makedirs(write_dir)
+        write_path = os.path.join(write_dir, name+'.txt')
 
         write_imp_feature_name(write_path, imp_feat_dict)
 
-    
-    
-    #dump_file("selected_feature", folder, dic)
-    ##########################
-
-    # MLPClassifier
-    #print("##### MLP classifier ######")
-    #clf = MLPClassifier(hidden_layer_sizes=(40, 20, 10), batch_size=8, max_iter=10000, learning_rate_init=0.0001, random_state=1)
-    """ clf = MLPClassifier(hidden_layer_sizes=(100, 60, 30, 10), batch_size=8, max_iter=100000000, learning_rate_init=0.0001, random_state=1)
-    clf.fit(X_train, Y_train)
-    Y_predict = clf.predict(X_val)
-    print('Y_val: ', Y_val)
-    print('Y_pre: ', Y_predict) """
-    print("################################")
-    ###############
-
-
-
-    """ # class weight
-    N = [(Y_train == 0).sum(), (Y_train == 1).sum()]
-    w = np.zeros((2,))
-    for i in range(2): #num_classes
-        w[i] = (1/N[i])/((1/2)*((1/N[0])+(1/N[1])))
-    print("class weights: ", w)
-    ##############
-
-
-
-    # Logistic regression check
-    print("##### Logistic Regression ######")
-    logisticRegr = LogisticRegression(solver = 'lbfgs', class_weight="balanced", max_iter=10000)
-    logisticRegr.fit(X_train, Y_train)
-    Y_predict = logisticRegr.predict(X_val)
-    print('Y_val: ', Y_val)
-    print('Y_pre: ', Y_predict)
-    ###########################
-
-    C_list = [0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 1e6, 1e7]
-
-    print("##### SVM ######")
-    for C in C_list:
-        print("C: ", C)
-        model = SVC(kernel="rbf", C=C, class_weight="balanced", max_iter=10000, random_state = 2022)
-        # define evaluation procedure
-        cv = RepeatedStratifiedKFold(n_splits=3, n_repeats=3, random_state=1)
-        # evaluate model
-        scores = cross_val_score(model, X_train, Y_train, scoring='roc_auc', cv=cv, n_jobs=-1)
-        print('Mean ROC AUC: %.3f' % np.mean(scores))
-
-        model.fit(X_train, Y_train)
-        Y_predict = model.predict(X_val)
-
+        clf = MLPClassifier(hidden_layer_sizes=(100, 50, 20, 10), batch_size=4, max_iter=100000000, learning_rate_init=0.0001, random_state=1)
+        clf.fit(X_train, Y_train)
+        Y_predict = clf.predict(X_val)
         print('Y_val: ', Y_val)
         print('Y_pre: ', Y_predict)
+        accuracy = accuracy_score(Y_val, Y_predict)
+        accuracy_folds.append(accuracy)
 
-        #classifier.fit(X_train, Y_train)
+    print("accuracy per fold: ",accuracy_folds)
+    print("avg accuracy: ", np.average(np.asarray(accuracy_folds)))
 
-        Y_predict = model.predict(X_val)
 
-        print('Y_val: ', Y_val)
-        print('T_pre: ', Y_predict) """
+
+
+
+
+
+
+""" # class weight
+N = [(Y_train == 0).sum(), (Y_train == 1).sum()]
+w = np.zeros((2,))
+for i in range(2): #num_classes
+    w[i] = (1/N[i])/((1/2)*((1/N[0])+(1/N[1])))
+print("class weights: ", w)
+##############
+
+
+
+# Logistic regression check
+print("##### Logistic Regression ######")
+logisticRegr = LogisticRegression(solver = 'lbfgs', class_weight="balanced", max_iter=10000)
+logisticRegr.fit(X_train, Y_train)
+Y_predict = logisticRegr.predict(X_val)
+print('Y_val: ', Y_val)
+print('Y_pre: ', Y_predict)
+###########################
+
+C_list = [0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 1e6, 1e7]
+
+print("##### SVM ######")
+for C in C_list:
+    print("C: ", C)
+    model = SVC(kernel="rbf", C=C, class_weight="balanced", max_iter=10000, random_state = 2022)
+    # define evaluation procedure
+    cv = RepeatedStratifiedKFold(n_splits=3, n_repeats=3, random_state=1)
+    # evaluate model
+    scores = cross_val_score(model, X_train, Y_train, scoring='roc_auc', cv=cv, n_jobs=-1)
+    print('Mean ROC AUC: %.3f' % np.mean(scores))
+
+    model.fit(X_train, Y_train)
+    Y_predict = model.predict(X_val)
+
+    print('Y_val: ', Y_val)
+    print('Y_pre: ', Y_predict)
+
+    #classifier.fit(X_train, Y_train)
+
+    Y_predict = model.predict(X_val)
+
+    print('Y_val: ', Y_val)
+    print('T_pre: ', Y_predict) """

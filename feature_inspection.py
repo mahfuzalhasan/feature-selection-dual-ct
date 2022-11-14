@@ -91,7 +91,7 @@ if __name__=='__main__':
     feat_appearances = {}
 
     for energy_level in img_kev_list:
-        f = open(os.path.join(cfg.output_dir, str(energy_level)+'.txt'), "r")
+        f = open(os.path.join(cfg.output_dir, "reduced_feature", str(energy_level)+'.txt'), "r")
         data = f.read()
         list_data = list(set(data.split("\n")[:-1]))
 
@@ -102,8 +102,10 @@ if __name__=='__main__':
                 feat_appearances[feat] += 1
                 
     output = [(key, val) for key, val in feat_appearances.items() if val>10]
-    feature_stats()
-    print()
+    #features [key for key, val in feat_appearances.items() if val>10]
+    print("common important features: ",output)
+    feature_stats(output)
+    #print()
 
 
     
