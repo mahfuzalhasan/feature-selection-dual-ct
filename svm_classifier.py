@@ -5,6 +5,7 @@ from utils import *
 import numpy as np
 from sklearn.svm import LinearSVC, SVC
 from sklearn.model_selection import RepeatedStratifiedKFold, cross_val_score
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.neural_network import MLPClassifier
 from sklearn.decomposition import PCA
@@ -12,6 +13,7 @@ from sklearn.metrics import accuracy_score
 
 from sklearn.utils.class_weight import compute_class_weight 
 from sklearn.linear_model import LogisticRegression
+from imblearn.over_sampling import SMOTE, ADASYN
 
 import os
 
@@ -24,7 +26,8 @@ def important_feature_selection(train_features, val_features, initial_feature_na
     pca.fit(train_features)
     X_pc = pca.transform(train_features)
     X_val = pca.transform(val_features)
-    # 90 patients --> 90x4019
+
+    # 90 patients --> 90x4019 ## for one class
 
     # 90 patients --> 90x3x4019 
     # to run PCA --> 90 x 12057 ---> [0 5000]
@@ -77,7 +80,8 @@ def select_keV_data(data, input_keV, mapper):
     return selected_data
 
 
-
+def desired_sample():
+    return {0:28, 1:40}
 if __name__=='__main__':
 
     img_kev_list = [i for i in range(40, 141, 5)]
@@ -104,26 +108,30 @@ if __name__=='__main__':
     for keV in img_kev_list:
         input_keV = [keV]
         if fixed:
-            input_keV = [65, 110, 140]
+            input_keV = [65]
         indices = np.asarray([mapper[i] for i in input_keV])
         print("####### Energy Level: ",input_keV, "keV#########")
         accuracy_folds = []
+
         name = ''
         for j, keV in enumerate(input_keV):
             name += str(keV)
             if j != len(input_keV)-1:
                 name += "_"
+
         for fold in range(5):
             print("Fold # ", fold)
             X_train = np.asarray(train_folds[fold])
             Y_train = np.asarray(train_label_folds[fold])
             X_val = np.asarray(val_folds[fold])
             Y_val = np.asarray(val_label_folds[fold])
-            #print("pre-loaded data: ", X_train.shape, X_val.shape)
-            #print("pre-loaded label: ", Y_train.shape, Y_val.shape)
+            print("pre-loaded data: ", X_train.shape, X_val.shape)
+            print("pre-loaded label: ", Y_train.shape, Y_val.shape)
 
             X_train = X_train[:, indices, :]
             X_val = X_val[:, indices, :]
+
+
             
 
             #print("X-train and X-val specific keV selection: ", X_train.shape, X_val.shape)
@@ -132,6 +140,7 @@ if __name__=='__main__':
             X_train, Y_train = random_shuffle(X_train, Y_train)
             X_val, Y_val = random_shuffle(X_val, Y_val)
             initial_feature_names = read_file("features", folder)
+
 
             #print("previous: ",X_train[0:10, 1, 3050])
             X_train = X_train.reshape(X_train.shape[0], -1)
@@ -150,15 +159,28 @@ if __name__=='__main__':
             Y_val = Y_val.astype('int')
             print("data: ", X_train.shape, X_val.shape)
             print('labels: ', Y_train.shape, Y_val.shape)
+            print("class 1 and 0 train: ",Y_train[Y_train==1].shape, Y_train[Y_train==0].shape)
+            #exit()
             ######
+
+            ### #minor_class_sample/#major_class_sample = 0.7
+            method = ADASYN(sampling_strategy=0.7, random_state=42)
+            X_res, Y_train = method.fit_sample(X_train, Y_train)
+            #print("X res: ",X_res.shape, Y_train.shape)
+            print("class 1 and 0 after SMOTE: ",Y_train[Y_train==1].shape, Y_train[Y_train==0].shape)
+            #print("class 1 and 0 val: ",y_res[y_res==1].shape, y_res[Y_val==0].shape)
+            #exit()
 
             ####
             # dimensionality_reduction
             #X_train, X_val = dimensionality_reduction(X_train, X_val)
-            X_train, X_val, imp_feat_dict = important_feature_selection(X_train, X_val, initial_feature_names)
-            print("dim reduced data: ", X_train.shape, X_val.shape)
-
+            X_train, X_val, imp_feat_dict = important_feature_selection(X_res, X_val, initial_feature_names)
             
+            print("dim reduced data: ", X_train.shape, X_val.shape)
+            #print("class 1 and 0 after SMOTE: ",Y_train[Y_train==1].shape, Y_train[Y_train==0].shape)
+            #print("class 1 and 0 val: ",Y_val[Y_val==1].shape, Y_val[Y_val==0].shape)
+
+            #exit()
 
             write_dir = os.path.join(cfg.output_dir, "reduced_feature")
             if not os.path.exists(write_dir):
@@ -167,7 +189,9 @@ if __name__=='__main__':
             write_path = os.path.join(write_dir, name+'.txt')
             write_imp_feature_name(write_path, imp_feat_dict)
 
-            clf = MLPClassifier(hidden_layer_sizes=(50, 25, 10), batch_size=2, max_iter=100000000, learning_rate_init=0.0001, random_state=1)
+            clf = MLPClassifier(hidden_layer_sizes=(40, 15, 5), batch_size=4, max_iter=100000000, learning_rate_init=0.0001, random_state=1)
+            #clf = RandomForestClassifier(n_estimators = 100) 
+            
             clf.fit(X_train, Y_train)
             Y_predict = clf.predict(X_val)
             print('Y_val: ', Y_val)
@@ -177,13 +201,14 @@ if __name__=='__main__':
             print(f'fold:{fold} accuracy: {accuracy}')
             accuracy_folds.append(accuracy)
 
-        print(f'keV:{keV} accuracy per fold:{accuracy_folds}')
+        print(f'keV:{input_keV} accuracy per fold:{accuracy_folds}')
         avg_acc = round(np.average(np.asarray(accuracy_folds)), 3)
         print("avg accuracy: ", avg_acc)
         print("##############################################################")
 
 
-        write_dir = os.path.join(cfg.output_dir, "quant_result")
+        """ classification_type = "RF"
+        write_dir = os.path.join(cfg.output_dir, "quant_result", classification_type)
         if not os.path.exists(write_dir):
             os.makedirs(write_dir)
 
@@ -194,7 +219,7 @@ if __name__=='__main__':
         f.write(''+repr({'avg_acc':avg_acc})+'\n')
         f.write("######################################################### \n")
         f.write(" \n ")
-        f.close()
+        f.close() """
 
         if fixed:
             exit()

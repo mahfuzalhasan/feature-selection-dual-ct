@@ -66,7 +66,7 @@ class DataProcess(object):
         print("good: ", labels[labels==1].shape)
         print("bad: ", labels[labels==0].shape)
         print("unblabeled ids: ",unlabeled_ids, len(unlabeled_ids))
-        #exit()
+        exit()
         train_data, train_label, val_data, val_label =  self.five_fold_creation(feature_set, labels)
         #print(train_label, val_label)
         #print(train_label.shape, train_data.shape, val_label.shape, val_data.shape)
