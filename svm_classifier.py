@@ -84,9 +84,10 @@ if __name__=='__main__':
     mapper = {img_kev_list[i]:i for i in range(21)}
     
     #for keV in img_kev_list:
-    input_keV = [65, 90, 120]
-    print("image in keV: ", input_keV)
-    indices = np.asarray([mapper[i] for i in input_keV])
+    ##### energy level to work on
+    # input_keV = [65, 90, 120]
+    # print("image in keV: ", input_keV)
+    # indices = np.asarray([mapper[i] for i in input_keV])
     #indices = np.asarray([mapper[keV]])
     #indices = np.asarray(indices)
 
@@ -95,77 +96,111 @@ if __name__=='__main__':
     train_label_folds = read_file("train_label_folds", folder)
     val_folds = read_file("val_folds", folder)
     val_label_folds = read_file("val_label_folds", folder)
-    accuracy_folds = []
-
-    for fold in range(5):
-        print("Fold # ", fold)
-        X_train = np.asarray(train_folds[fold])
-        Y_train = np.asarray(train_label_folds[fold])
-        X_val = np.asarray(val_folds[fold])
-        Y_val = np.asarray(val_label_folds[fold])
-        print("pre-loaded data: ", X_train.shape, X_val.shape)
-        print("pre-loaded label: ", Y_train.shape, Y_val.shape)
-
-        X_train = X_train[:, indices, :]
-        X_val = X_val[:, indices, :]
-        
-
-        print("X-train and X-val specific keV selection: ", X_train.shape, X_val.shape)
-        #exit()
-
-        X_train, Y_train = random_shuffle(X_train, Y_train)
-        X_val, Y_val = random_shuffle(X_val, Y_val)
-        initial_feature_names = read_file("features", folder)
-
-        #print("previous: ",X_train[0:10, 1, 3050])
-        X_train = X_train.reshape(X_train.shape[0], -1)
-        X_val = X_val.reshape(X_val.shape[0], -1)
-        #print("after reshaped: ",X_train[0:10, 7069])
-        #print(X_train.shape, X_val.shape)
-        #exit()
-        # Normalization
-        scaler = MinMaxScaler().fit(X_train)
-        X_train = scaler.transform(X_train)
-        X_val = scaler.transform(X_val)
-        ######
-
-        # type conversion of labels
-        Y_train = Y_train.astype('int')
-        Y_val = Y_val.astype('int')
-        #print("data: ", X_train.shape, X_val.shape)
-        #print('labels: ', Y_train.shape, Y_val.shape)
-        ######
-
-        ####
-
-        # dimensionality_reduction
-        #X_train, X_val = dimensionality_reduction(X_train, X_val)
-        X_train, X_val, imp_feat_dict = important_feature_selection(X_train, X_val, initial_feature_names)
-        print("dim reduced data: ", X_train.shape, X_val.shape)
-
+    
+    ### if you want to check with specific energy levels set fixed = True,
+    # Otherwise set fixed = False. IF False, then output will be calculated and written in file
+    # for all energy levels
+    fixed = True
+    for keV in img_kev_list:
+        input_keV = [keV]
+        if fixed:
+            input_keV = [65, 110, 140]
+        indices = np.asarray([mapper[i] for i in input_keV])
+        print("####### Energy Level: ",input_keV, "keV#########")
+        accuracy_folds = []
         name = ''
         for j, keV in enumerate(input_keV):
             name += str(keV)
             if j != len(input_keV)-1:
                 name += "_"
+        for fold in range(5):
+            print("Fold # ", fold)
+            X_train = np.asarray(train_folds[fold])
+            Y_train = np.asarray(train_label_folds[fold])
+            X_val = np.asarray(val_folds[fold])
+            Y_val = np.asarray(val_label_folds[fold])
+            #print("pre-loaded data: ", X_train.shape, X_val.shape)
+            #print("pre-loaded label: ", Y_train.shape, Y_val.shape)
+
+            X_train = X_train[:, indices, :]
+            X_val = X_val[:, indices, :]
             
-        write_dir = os.path.join(cfg.output_dir, "reduced_feature")
+
+            #print("X-train and X-val specific keV selection: ", X_train.shape, X_val.shape)
+            #exit()
+
+            X_train, Y_train = random_shuffle(X_train, Y_train)
+            X_val, Y_val = random_shuffle(X_val, Y_val)
+            initial_feature_names = read_file("features", folder)
+
+            #print("previous: ",X_train[0:10, 1, 3050])
+            X_train = X_train.reshape(X_train.shape[0], -1)
+            X_val = X_val.reshape(X_val.shape[0], -1)
+            #print("after reshaped: ",X_train[0:10, 7069])
+            #print(X_train.shape, X_val.shape)
+            #exit()
+            # Normalization
+            scaler = MinMaxScaler().fit(X_train)
+            X_train = scaler.transform(X_train)
+            X_val = scaler.transform(X_val)
+            ######
+
+            # type conversion of labels
+            Y_train = Y_train.astype('int')
+            Y_val = Y_val.astype('int')
+            print("data: ", X_train.shape, X_val.shape)
+            print('labels: ', Y_train.shape, Y_val.shape)
+            ######
+
+            ####
+            # dimensionality_reduction
+            #X_train, X_val = dimensionality_reduction(X_train, X_val)
+            X_train, X_val, imp_feat_dict = important_feature_selection(X_train, X_val, initial_feature_names)
+            print("dim reduced data: ", X_train.shape, X_val.shape)
+
+            
+
+            write_dir = os.path.join(cfg.output_dir, "reduced_feature")
+            if not os.path.exists(write_dir):
+                os.makedirs(write_dir)
+
+            write_path = os.path.join(write_dir, name+'.txt')
+            write_imp_feature_name(write_path, imp_feat_dict)
+
+            clf = MLPClassifier(hidden_layer_sizes=(50, 25, 10), batch_size=2, max_iter=100000000, learning_rate_init=0.0001, random_state=1)
+            clf.fit(X_train, Y_train)
+            Y_predict = clf.predict(X_val)
+            print('Y_val: ', Y_val)
+            print('Y_pre: ', Y_predict)
+            accuracy = accuracy_score(Y_val, Y_predict)
+            accuracy = round(accuracy, 3)
+            print(f'fold:{fold} accuracy: {accuracy}')
+            accuracy_folds.append(accuracy)
+
+        print(f'keV:{keV} accuracy per fold:{accuracy_folds}')
+        avg_acc = round(np.average(np.asarray(accuracy_folds)), 3)
+        print("avg accuracy: ", avg_acc)
+        print("##############################################################")
+
+
+        write_dir = os.path.join(cfg.output_dir, "quant_result")
         if not os.path.exists(write_dir):
             os.makedirs(write_dir)
+
         write_path = os.path.join(write_dir, name+'.txt')
+        f = open(os.path.join(write_path), 'w')
+        f.write(''+repr({'energy':input_keV})+'\n')
+        f.write(''+repr({'acc_p_fold':accuracy_folds})+'\n')
+        f.write(''+repr({'avg_acc':avg_acc})+'\n')
+        f.write("######################################################### \n")
+        f.write(" \n ")
+        f.close()
 
-        write_imp_feature_name(write_path, imp_feat_dict)
+        if fixed:
+            exit()
 
-        clf = MLPClassifier(hidden_layer_sizes=(100, 50, 20, 10), batch_size=4, max_iter=100000000, learning_rate_init=0.0001, random_state=1)
-        clf.fit(X_train, Y_train)
-        Y_predict = clf.predict(X_val)
-        print('Y_val: ', Y_val)
-        print('Y_pre: ', Y_predict)
-        accuracy = accuracy_score(Y_val, Y_predict)
-        accuracy_folds.append(accuracy)
+        
 
-    print("accuracy per fold: ",accuracy_folds)
-    print("avg accuracy: ", np.average(np.asarray(accuracy_folds)))
 
 
 

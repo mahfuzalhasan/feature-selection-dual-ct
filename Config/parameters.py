@@ -1,4 +1,4 @@
 saved_file_loc = "./splits"
-dump = True
+dump = False
 load = True
 img_type = "65"

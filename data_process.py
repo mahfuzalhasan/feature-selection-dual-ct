@@ -65,7 +65,7 @@ class DataProcess(object):
         print("labels: ", labels.shape)
         print("good: ", labels[labels==1].shape)
         print("bad: ", labels[labels==0].shape)
-        print("unblabeled ids: ",unlabeled_ids)
+        print("unblabeled ids: ",unlabeled_ids, len(unlabeled_ids))
         #exit()
         train_data, train_label, val_data, val_label =  self.five_fold_creation(feature_set, labels)
         #print(train_label, val_label)
@@ -114,7 +114,7 @@ class DataProcess(object):
                 # print("selection: ",selection)
                 start = end
                 selection = np.zeros(data_class.shape[0], dtype=bool)
-                
+
         return train_data_folds, train_label_folds, val_data_folds, val_label_folds 
 
 
